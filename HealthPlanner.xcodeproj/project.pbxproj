@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		E45FD0EB2F5F62BE00666149 /* WeatherContextManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E45FD0EA2F5F62BE00666149 /* WeatherContextManager.swift */; };
+		E45FD0ED2F5F62D500666149 /* RoutineRecommendationEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = E45FD0EC2F5F62D500666149 /* RoutineRecommendationEngine.swift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		E45FD09A2F5E3F7900666149 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -27,6 +32,8 @@
 		E45FD08C2F5E3F7900666149 /* HealthPlanner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HealthPlanner.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E45FD0992F5E3F7900666149 /* HealthPlannerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HealthPlannerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E45FD0A32F5E3F7900666149 /* HealthPlannerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HealthPlannerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E45FD0EA2F5F62BE00666149 /* WeatherContextManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherContextManager.swift; sourceTree = "<group>"; };
+		E45FD0EC2F5F62D500666149 /* RoutineRecommendationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutineRecommendationEngine.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -79,6 +86,8 @@
 				E45FD09C2F5E3F7900666149 /* HealthPlannerTests */,
 				E45FD0A62F5E3F7900666149 /* HealthPlannerUITests */,
 				E45FD08D2F5E3F7900666149 /* Products */,
+				E45FD0EA2F5F62BE00666149 /* WeatherContextManager.swift */,
+				E45FD0EC2F5F62D500666149 /* RoutineRecommendationEngine.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -236,6 +245,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E45FD0EB2F5F62BE00666149 /* WeatherContextManager.swift in Sources */,
+				E45FD0ED2F5F62D500666149 /* RoutineRecommendationEngine.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -395,11 +406,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = HealthPlanner/HealthPlanner.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = YGP2B5537M;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "HealthPlanner reads your Apple Health data to provide a daily local-only recommendation.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "This app may save workout planning results or related health information with my permission.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "HealthPlanner uses your location to fetch local weather and refine routine suggestions.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -427,11 +442,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = HealthPlanner/HealthPlanner.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = YGP2B5537M;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "HealthPlanner reads your Apple Health data to provide a daily local-only recommendation.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "This app may save workout planning results or related health information with my permission.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "HealthPlanner uses your location to fetch local weather and refine routine suggestions.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

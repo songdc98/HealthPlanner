@@ -1,17 +1,13 @@
-//
-//  HealthPlannerApp.swift
-//  HealthPlanner
-//
-//  Created by Dachuan Song on 3/8/26.
-//
-
 import SwiftUI
 
 @main
 struct HealthPlannerApp: App {
+    @StateObject private var localization = LocalizationManager()
+
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(localization)
         }
     }
 }
