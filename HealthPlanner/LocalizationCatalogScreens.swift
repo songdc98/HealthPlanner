@@ -91,6 +91,12 @@ extension LocalizationCatalog {
         "today.tomorrowRecovery": ("Tomorrow will likely stay recovery-focused.", "明天大概率仍以恢复为主。"),
         "today.tomorrowLighter": ("Tomorrow will likely shift lighter than today.", "明天大概率会比今天更轻。"),
         "today.tomorrowBalanced": ("Tomorrow will likely remain balanced if recovery stays stable.", "如果恢复稳定，明天大概率保持均衡安排。"),
+        "plan.mobilityFlowGuidance": ("Gentle range-of-motion sequence", "轻柔活动关节与活动度恢复"),
+        "plan.load.bodyweightAdded": ("Bodyweight or small added load, RIR 2-3", "自重或小幅加重，保留 2-3 次余力"),
+        "plan.load.assistedBodyweight": ("Assisted or bodyweight reps, RIR 2-3", "辅助或自重完成，保留 2-3 次余力"),
+        "plan.load.moderateTempo": ("Moderate load, controlled tempo, RIR 2-3", "中等负重，控制节奏，保留 2-3 次余力"),
+        "plan.load.rpe67": ("RPE 6-7, leave 3 reps in reserve", "主观强度 6-7，保留 3 次余力"),
+        "plan.load.rpe68": ("RPE 6-8, leave 2-3 reps in reserve", "主观强度 6-8，保留 2-3 次余力"),
 
         "profile.basic": ("Basic", "基础信息"),
         "profile.goal": ("Goal & Level", "目标与经验"),

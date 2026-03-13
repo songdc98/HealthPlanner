@@ -412,7 +412,7 @@ final class HealthKitManager: ObservableObject {
                     .map { DateInterval(start: $0.startDate, end: $0.endDate) }
                 let mergedIntervals = Self.mergeIntervals(sleepIntervals)
                 let history = Self.buildSleepHistory(from: mergedIntervals, calendar: calendar, referenceDate: endDate)
-                let lastNightHours = history.last(where: { $0.hours >= 2.0 })?.hours
+                let lastNightHours = history.last(where: { $0.hours >= 1.0 })?.hours
 
                 let fallbackMessage: String = lastNightHours == nil
                     ? "Permission may be configured but this metric has no recent entries"
@@ -881,13 +881,14 @@ final class HealthKitManager: ObservableObject {
 
     nonisolated private static func isAsleepValue(_ rawValue: Int) -> Bool {
         if #available(iOS 16.0, *) {
-            return rawValue == HKCategoryValueSleepAnalysis.asleepCore.rawValue
-                || rawValue == HKCategoryValueSleepAnalysis.asleepDeep.rawValue
-                || rawValue == HKCategoryValueSleepAnalysis.asleepREM.rawValue
-                || rawValue == HKCategoryValueSleepAnalysis.asleepUnspecified.rawValue
+            guard let value = HKCategoryValueSleepAnalysis(rawValue: rawValue) else {
+                return false
+            }
+            return HKCategoryValueSleepAnalysis.allAsleepValues.contains(value)
         }
 
-        return rawValue == HKCategoryValueSleepAnalysis.asleep.rawValue
+        return rawValue != HKCategoryValueSleepAnalysis.inBed.rawValue
+            && rawValue != HKCategoryValueSleepAnalysis.awake.rawValue
     }
 
     nonisolated private static func mergeIntervals(_ intervals: [DateInterval]) -> [DateInterval] {
@@ -909,35 +910,56 @@ final class HealthKitManager: ObservableObject {
 
     nonisolated private static func buildSleepHistory(from intervals: [DateInterval], calendar: Calendar, referenceDate: Date, dayCount: Int = 7) -> [SleepHistoryEntry] {
         let today = calendar.startOfDay(for: referenceDate)
-        let firstMorning = calendar.date(byAdding: .day, value: -(dayCount - 1), to: today) ?? today
+        let firstDay = calendar.date(byAdding: .day, value: -(dayCount - 1), to: today) ?? today
 
         return (0..<dayCount).compactMap { offset in
-            guard let morning = calendar.date(byAdding: .day, value: offset, to: firstMorning),
-                  let windowStart = calendar.date(byAdding: .hour, value: -18, to: morning),
-                  let windowEnd = calendar.date(byAdding: .hour, value: 14, to: morning),
-                  let overnightStart = calendar.date(byAdding: .hour, value: -3, to: windowStart),
-                  let overnightEnd = calendar.date(byAdding: .hour, value: 10, to: morning) else {
+            guard let dayStart = calendar.date(byAdding: .day, value: offset, to: firstDay),
+                  let overnightWindowStart = calendar.date(byAdding: .hour, value: -6, to: dayStart),
+                  let overnightWindowEnd = calendar.date(byAdding: .hour, value: 12, to: dayStart),
+                  let preferredOvernightStart = calendar.date(byAdding: .hour, value: -4, to: dayStart),
+                  let preferredOvernightEnd = calendar.date(byAdding: .hour, value: 10, to: dayStart),
+                  let napWindowStart = calendar.date(byAdding: .hour, value: 10, to: dayStart),
+                  let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) else {
                 return nil
             }
 
-            let clippedIntervals = intervals.compactMap { interval -> DateInterval? in
-                let overlapStart = max(interval.start, windowStart)
-                let overlapEnd = min(interval.end, windowEnd)
-                guard overlapEnd > overlapStart else { return nil }
-                return DateInterval(start: overlapStart, end: overlapEnd)
-            }
+            let overnightIntervals = clippedIntervals(in: DateInterval(start: overnightWindowStart, end: overnightWindowEnd), from: intervals)
+            let overnightClusters = clusterSleepIntervals(overnightIntervals, maxGapMinutes: 50)
+            let mainOvernight = dominantSleepCluster(
+                from: overnightClusters,
+                preferredWindow: DateInterval(start: preferredOvernightStart, end: preferredOvernightEnd),
+                minimumDurationHours: 1.5
+            )
 
-            let clusters = clusterSleepIntervals(clippedIntervals, maxGapMinutes: 90)
-            guard let mainCluster = dominantSleepCluster(
-                from: clusters,
-                preferredWindow: DateInterval(start: overnightStart, end: overnightEnd)
-            ) else {
-                return SleepHistoryEntry(date: morning, hours: 0)
-            }
+            let effectiveDayEnd = min(dayEnd, referenceDate)
+            let napIntervals = clippedIntervals(in: DateInterval(start: napWindowStart, end: effectiveDayEnd), from: intervals)
+            let napClusters = clusterSleepIntervals(napIntervals, maxGapMinutes: 25)
+                .filter { cluster in
+                    let hours = cluster.totalAsleepSeconds / 3600.0
+                    guard hours >= 0.33, hours <= 4.0 else { return false }
+                    if let mainOvernight, cluster.overlapSeconds(with: DateInterval(start: mainOvernight.start, end: mainOvernight.end)) > 0 {
+                        return false
+                    }
+                    return true
+                }
 
-            let hours = mainCluster.totalAsleepSeconds / 3600.0
-            guard hours >= 2.0 else { return SleepHistoryEntry(date: morning, hours: 0) }
-            return SleepHistoryEntry(date: morning, hours: hours)
+            let overnightHours = mainOvernight?.totalAsleepSeconds ?? 0
+            let napHours = napClusters.reduce(0.0) { $0 + $1.totalAsleepSeconds }
+            let totalHours = (overnightHours + napHours) / 3600.0
+
+            guard totalHours >= 0.33 else {
+                return SleepHistoryEntry(date: dayStart, hours: 0)
+            }
+            return SleepHistoryEntry(date: dayStart, hours: totalHours)
+        }
+    }
+
+    nonisolated private static func clippedIntervals(in window: DateInterval, from intervals: [DateInterval]) -> [DateInterval] {
+        intervals.compactMap { interval in
+            let overlapStart = max(interval.start, window.start)
+            let overlapEnd = min(interval.end, window.end)
+            guard overlapEnd > overlapStart else { return nil }
+            return DateInterval(start: overlapStart, end: overlapEnd)
         }
     }
 
@@ -963,8 +985,14 @@ final class HealthKitManager: ObservableObject {
         return clusters
     }
 
-    nonisolated private static func dominantSleepCluster(from clusters: [SleepCluster], preferredWindow: DateInterval) -> SleepCluster? {
-        clusters.max { lhs, rhs in
+    nonisolated private static func dominantSleepCluster(
+        from clusters: [SleepCluster],
+        preferredWindow: DateInterval,
+        minimumDurationHours: Double
+    ) -> SleepCluster? {
+        clusters
+            .filter { $0.totalAsleepSeconds >= minimumDurationHours * 3600.0 }
+            .max { lhs, rhs in
             let lhsPreferred = lhs.overlapSeconds(with: preferredWindow)
             let rhsPreferred = rhs.overlapSeconds(with: preferredWindow)
             if lhsPreferred == rhsPreferred {

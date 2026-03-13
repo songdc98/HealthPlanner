@@ -170,9 +170,11 @@ struct ContentView: View {
                                             .font(.system(size: 22, weight: .bold, design: .rounded))
                                         Text(todayHeadline)
                                             .font(AppTheme.bodyStrong)
-                                        Text(status.reason)
-                                            .font(AppTheme.caption)
-                                            .foregroundStyle(.secondary)
+                                        if let dashboardReason = dashboardStatusReason(status.reason) {
+                                            Text(dashboardReason)
+                                                .font(AppTheme.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
                                         Text(todaySubheadline)
                                             .font(AppTheme.caption)
                                             .foregroundStyle(.secondary)
@@ -870,10 +872,12 @@ struct ContentView: View {
         isLoading = true
 
         await weatherManager.refreshWeather()
-        let newSnapshot = await healthKitManager.loadDailySnapshot()
+        let rawSnapshot = await healthKitManager.loadDailySnapshot()
         let baselineFallbacks = await healthKitManager.loadBaselineFallbacks()
         let recentWorkouts = await healthKitManager.loadRecentWorkouts(days: 14)
         let preBaseline = BaselineEngine.compute(records: historyStore.records, sessions: historyStore.sessions)
+
+        let newSnapshot = mergedSnapshotForDisplay(previous: snapshot, incoming: rawSnapshot)
 
         if let previous = historyStore.latestRecord(before: newSnapshot.date), previous.completedRecommendation == true || previous.workoutType != nil {
             let response = PassiveRecoveryResponseEngine.evaluate(
@@ -1055,7 +1059,7 @@ struct ContentView: View {
         if let match = exerciseStore.allExercises.first(where: { $0.id == id }) {
             return localization.exerciseDisplayName(for: match)
         }
-        return fallback
+        return localization.exerciseName(id: id, fallback: fallback)
     }
 
     private var readinessScore: Int {
@@ -1108,6 +1112,66 @@ struct ContentView: View {
         return localization.recommendationExplanation(recommendation)
     }
 
+    private func dashboardStatusReason(_ reason: String) -> String? {
+        if reason == t("todayStatus.reason.daylight") {
+            return nil
+        }
+        return reason
+    }
+
+    private func mergedSnapshotForDisplay(previous: DailyHealthSnapshot, incoming: DailyHealthSnapshot) -> DailyHealthSnapshot {
+        var resolved = incoming
+
+        if incoming.stepCountToday == nil {
+            resolved.stepCountToday = previous.stepCountToday
+        }
+        if incoming.latestHeartRate == nil {
+            resolved.latestHeartRate = previous.latestHeartRate
+        }
+        if incoming.todayHeartRateRange.minimum == nil && incoming.todayHeartRateRange.maximum == nil {
+            resolved.todayHeartRateRange = previous.todayHeartRateRange
+        }
+        if incoming.restingHeartRate == nil {
+            resolved.restingHeartRate = previous.restingHeartRate
+        }
+        if incoming.recentRestingHeartRateHistory.isEmpty {
+            resolved.recentRestingHeartRateHistory = previous.recentRestingHeartRateHistory
+        }
+        if incoming.hrv == nil {
+            resolved.hrv = previous.hrv
+        }
+        if incoming.recentHRVHistory.isEmpty {
+            resolved.recentHRVHistory = previous.recentHRVHistory
+        }
+        if incoming.latestWorkout == nil {
+            resolved.latestWorkout = previous.latestWorkout
+        }
+
+        if shouldHoldPreviousDayState(previous: previous, incoming: incoming) {
+            resolved.lastNightSleepHours = previous.lastNightSleepHours
+            resolved.recentSleepHistory = previous.recentSleepHistory
+        } else {
+            if incoming.lastNightSleepHours == nil {
+                resolved.lastNightSleepHours = previous.lastNightSleepHours
+            }
+            if incoming.recentSleepHistory.isEmpty {
+                resolved.recentSleepHistory = previous.recentSleepHistory
+            }
+        }
+
+        return resolved
+    }
+
+    private func shouldHoldPreviousDayState(previous: DailyHealthSnapshot, incoming: DailyHealthSnapshot) -> Bool {
+        let calendar = Calendar.current
+        guard !calendar.isDate(previous.date, inSameDayAs: incoming.date) else { return false }
+
+        let hasFreshSleepAnchor = incoming.recentSleepHistory.contains { entry in
+            calendar.isDate(entry.date, inSameDayAs: incoming.date) && entry.hours >= 1.0
+        }
+        return !hasFreshSleepAnchor
+    }
+
     private func dailyStatus(at now: Date) -> DailyStatusState {
         let baseScore =
             Double(recommendation.scores.recoveryScore) * 0.5 +
@@ -1115,7 +1179,10 @@ struct ContentView: View {
             Double(recommendation.scores.passiveRecoveryResponseScore) * 0.18 +
             Double(recoveryScore(.cardioSystemic)) * 0.10
 
-        let wakeReference = Calendar.current.date(bySettingHour: 7, minute: 30, second: 0, of: now) ?? now
+        let wakeReferenceDay = hasFreshSleepAnchorToday
+            ? now
+            : (Calendar.current.date(byAdding: .day, value: -1, to: now) ?? now)
+        let wakeReference = Calendar.current.date(bySettingHour: 7, minute: 30, second: 0, of: wakeReferenceDay) ?? now
         let awakeHours = max(0, now.timeIntervalSince(wakeReference) / 3600.0)
         let daytimePenalty = clamp((awakeHours - 1.5) * 1.8, min: 0, max: 22)
 
@@ -1195,6 +1262,13 @@ struct ContentView: View {
         }
 
         return DailyStatusState(score: score, label: label, reason: reason)
+    }
+
+    private var hasFreshSleepAnchorToday: Bool {
+        let calendar = Calendar.current
+        return snapshot.recentSleepHistory.contains { entry in
+            calendar.isDate(entry.date, inSameDayAs: Date()) && entry.hours >= 1.0
+        }
     }
 
     private var recentSleepValues: [Double] {
@@ -1638,7 +1712,7 @@ struct ContentView: View {
         let sets = exercise.sets ?? 0
         let reps = exercise.reps ?? "-"
         let rest = exercise.restSeconds ?? 0
-        let load = exercise.loadGuidance ?? t("common.rpe")
+        let load = exercise.loadGuidance.map { localization.loadGuidance($0) } ?? t("common.rpe")
         return "\(sets) x \(reps) • \(t("common.rest")) \(rest)s • \(load)"
     }
 

@@ -4,6 +4,9 @@ extension LocalizationCatalog {
     static let exerciseTable: [String: (en: String, zh: String)] = [
         "exercise.walk": ("Walk", "步行"),
         "exercise.run": ("Run", "跑步"),
+        "exercise.mobility": ("Mobility Flow", "灵活性恢复"),
+        "exercise.recovery-activity": ("Recovery Activity", "恢复活动"),
+        "exercise.strength-session": ("Strength Session", "力量训练"),
         "exercise.chest-press-machine": ("Chest Press Machine", "坐姿推胸机"),
         "exercise.lat-pulldown": ("Lat Pulldown", "高位下拉"),
         "exercise.seated-row": ("Seated Row / Row Machine", "坐姿划船机"),

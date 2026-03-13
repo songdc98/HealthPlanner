@@ -31,6 +31,30 @@ final class LocalizationManager: ObservableObject {
         return localized == key ? exercise.displayName : localized
     }
 
+    func exerciseName(id: String?, fallback: String) -> String {
+        if let id {
+            let localized = text("exercise.\(id)")
+            if localized != "exercise.\(id)" {
+                return localized
+            }
+        }
+
+        switch fallback {
+        case "Mobility Flow":
+            return text("exercise.mobility")
+        case "Recovery Activity":
+            return text("exercise.recovery-activity")
+        case "Strength Session":
+            return text("exercise.strength-session")
+        case "Walk":
+            return text("exercise.walk")
+        case "Run":
+            return text("exercise.run")
+        default:
+            return fallback
+        }
+    }
+
     func suggestionType(_ type: SuggestionType) -> String {
         switch type {
         case .rest: return text("rec.type.rest")
@@ -121,6 +145,25 @@ final class LocalizationManager: ObservableObject {
             return "\(text("fallback.queryFailed")): \(suffix)"
         }
         return message
+    }
+
+    func loadGuidance(_ guidance: String) -> String {
+        switch guidance {
+        case "Gentle range-of-motion sequence":
+            return text("plan.mobilityFlowGuidance")
+        case "Bodyweight or small added load, RIR 2-3":
+            return text("plan.load.bodyweightAdded")
+        case "Assisted or bodyweight reps, RIR 2-3":
+            return text("plan.load.assistedBodyweight")
+        case "Moderate load, controlled tempo, RIR 2-3":
+            return text("plan.load.moderateTempo")
+        case "RPE 6-7, leave 3 reps in reserve":
+            return text("plan.load.rpe67")
+        case "RPE 6-8, leave 2-3 reps in reserve":
+            return text("plan.load.rpe68")
+        default:
+            return guidance
+        }
     }
 
     func passiveSummary(_ summary: String) -> String {
