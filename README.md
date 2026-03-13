@@ -1,4 +1,4 @@
-## This project was completed jointly by me and Codex. If you are interested in my project, please contact me at [ dsong25@gmu.edu ]. Thank you for your attention.
+This project was completed jointly by me and Codex. If you are interested in my project, please contact me at [ dsong25@gmu.edu ]. Thank you for your attention.
 
 HealthPlanner
 
