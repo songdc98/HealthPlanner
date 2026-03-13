@@ -1,6 +1,6 @@
 This project was completed jointly by me and Codex. If you are interested in my project, please contact me at [ dsong25@gmu.edu ]. Thank you for your attention.
 
-HealthPlanner
+# HealthPlanner
 
 HealthPlanner is a local-only iPhone health and training planner built with SwiftUI and HealthKit. It combines Apple Health data, personal baselines, workout history, recovery modeling, and a user profile to generate adaptive daily recommendations without a backend, cloud sync, or login.
 
